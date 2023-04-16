@@ -1,0 +1,49 @@
+defmodule ExTournaments.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :ex_tournaments,
+      version: "0.1.0",
+      elixir: "~> 1.14",
+      start_permanent: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      description: description(),
+      package: package(),
+      deps: deps(),
+      name: "ExTournaments",
+      source_url: "https://github.com/vi0dine/ex_tournaments"
+    ]
+  end
+
+  # Run "mix help compile.app" to learn about applications.
+  def application do
+    [
+      extra_applications: [:logger],
+      mod: {ExTournaments.Application, []}
+    ]
+  end
+
+  # Run "mix help deps" to learn about dependencies.
+  defp deps do
+    [
+      {:jason, "~> 1.4"},
+      {:typed_struct, "~> 0.3.0"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
+      {:doctor, "~> 0.21.0", only: :dev},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp description() do
+    "Library to assist tournaments organizers in creating and managing participants pairing."
+  end
+
+  defp package() do
+    [
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/vi0dine/ex_tournaments"}
+    ]
+  end
+end
