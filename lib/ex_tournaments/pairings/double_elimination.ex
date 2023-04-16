@@ -1,6 +1,13 @@
 defmodule ExTournaments.Pairings.DoubleElimination do
+  @moduledoc """
+  Module for creation of a double elimination ladder
+  """
+
   require Integer
 
+  alias ExTournaments.Match
+
+  @spec call(list(integer()), non_neg_integer(), boolean()) :: list(Match.t())
   def call(players, starting_round, ordered \\ false) do
     players_list = players_list(players, ordered)
     exponent = :math.log2(length(players_list))
@@ -25,7 +32,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
       place_byes_for_first_round(matches, players_list, starting_round, exponent, remainder)
 
     matches = [
-      %{
+      %Match{
         round: round,
         match: 1,
         player1: nil,
@@ -37,9 +44,9 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     matches =
       matches
       |> Enum.map(fn match ->
-        if match[:round] == round - 1 do
+        if match.round == round - 1 do
           Map.merge(match, %{
-            win: %{
+            win: %Match{
               round: round,
               match: 1
             }
@@ -89,11 +96,11 @@ defmodule ExTournaments.Pairings.DoubleElimination do
            } ->
           lose_matches_a =
             matches
-            |> Enum.filter(fn m -> m[:round] == lose_round - win_round + ffwd + index end)
+            |> Enum.filter(fn m -> m.round == lose_round - win_round + ffwd + index end)
 
           lost_matches_b =
             matches
-            |> Enum.filter(fn m -> m[:round] == lose_round - win_round + ffwd + index + 1 end)
+            |> Enum.filter(fn m -> m.round == lose_round - win_round + ffwd + index + 1 end)
 
           %{lose_matches_a: lose_matches_a, ffwd: ffwd} =
             if length(lose_matches_a) == length(lost_matches_b) do
@@ -104,7 +111,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
           win_matches =
             matches
-            |> Enum.filter(fn m -> m[:round] == index end)
+            |> Enum.filter(fn m -> m.round == index end)
 
           fill = fill_pattern(length(win_matches), fill_count)
 
@@ -116,15 +123,15 @@ defmodule ExTournaments.Pairings.DoubleElimination do
             |> Enum.reduce(matches, fn {m, j}, acc ->
               match =
                 win_matches
-                |> Enum.find(fn m -> m[:match] == Enum.at(fill, j) end)
+                |> Enum.find(fn m -> m.match == Enum.at(fill, j) end)
 
               acc = acc |> Enum.filter(fn m -> m != match end)
 
               match =
                 Map.merge(match, %{
-                  loss: %{
-                    round: m[:round],
-                    match: m[:match]
+                  loss: %Match{
+                    round: m.round,
+                    match: m.match
                   }
                 })
 
@@ -139,18 +146,18 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
     finish =
       Enum.reduce(matches, 0, fn match, acc ->
-        Enum.max([acc, match[:round]])
+        Enum.max([acc, match.round])
       end)
 
     %{matches: matches} =
       Enum.reduce(start..finish, %{matches: matches}, fn i, %{matches: matches} ->
         lose_matches_a =
           matches
-          |> Enum.filter(fn m -> m[:round] == i end)
+          |> Enum.filter(fn m -> m.round == i end)
 
         lose_matches_b =
           matches
-          |> Enum.filter(fn m -> m[:round] == i + 1 end)
+          |> Enum.filter(fn m -> m.round == i + 1 end)
 
         lose_matches_a
         |> Enum.with_index()
@@ -166,9 +173,9 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
           m =
             Map.merge(m, %{
-              win: %{
-                round: match[:round],
-                match: match[:match]
+              win: %Match{
+                round: get_in(match, [Access.key!(:round)]),
+                match: get_in(match, [Access.key!(:match)])
               }
             })
 
@@ -180,18 +187,18 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
     filter =
       matches
-      |> Enum.reduce(0, fn match, acc -> Enum.max([acc, match[:round]]) end)
+      |> Enum.reduce(0, fn match, acc -> Enum.max([acc, match.round]) end)
 
     match =
       matches
-      |> Enum.filter(fn m -> m[:round] == filter end)
+      |> Enum.filter(fn m -> m.round == filter end)
       |> Enum.at(0)
 
     matches = matches |> Enum.filter(fn m -> m != match end)
 
     match =
       Map.merge(match, %{
-        win: %{
+        win: %Match{
           round: round_diff,
           match: 1
         }
@@ -199,7 +206,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
     matches = matches |> Enum.concat([match])
 
-    Enum.sort_by(matches, & &1[:round], :asc)
+    Enum.sort_by(matches, & &1.round, :asc)
   end
 
   defp fill_rounds_flow(
@@ -212,14 +219,14 @@ defmodule ExTournaments.Pairings.DoubleElimination do
          remainder
        )
        when remainder == 0 do
-    win_matches = matches |> Enum.filter(fn match -> match[:round] == win_round end)
+    win_matches = matches |> Enum.filter(fn match -> match.round == win_round end)
 
     fill = fill_pattern(length(win_matches), fill_count)
     fill_count = fill_count + 1
 
     %{matches: matches} =
       matches
-      |> Enum.filter(fn match -> match[:round] == lose_round end)
+      |> Enum.filter(fn match -> match.round == lose_round end)
       |> Enum.reduce(%{counter: 0, matches: matches}, fn m,
                                                          %{
                                                            counter: counter,
@@ -230,16 +237,15 @@ defmodule ExTournaments.Pairings.DoubleElimination do
                                                                       matches: matches,
                                                                       counter: counter
                                                                     } ->
-          match =
-            win_matches |> Enum.find(fn match -> match[:match] == Enum.at(fill, counter) end)
+          match = win_matches |> Enum.find(fn match -> match.match == Enum.at(fill, counter) end)
 
           matches = matches |> Enum.filter(fn m -> m != match end)
 
           match =
             Map.merge(match, %{
-              loss: %{
-                round: m[:round],
-                match: m[:match]
+              loss: %Match{
+                round: m.round,
+                match: m.match
               }
             })
 
@@ -267,24 +273,24 @@ defmodule ExTournaments.Pairings.DoubleElimination do
          remainder
        ) do
     if remainder <= :math.pow(2, :math.floor(exponent)) / 2 do
-      win_matches = matches |> Enum.filter(fn match -> match[:round] == win_round end)
+      win_matches = matches |> Enum.filter(fn match -> match.round == win_round end)
 
       fill = fill_pattern(length(win_matches), fill_count)
       fill_count = fill_count + 1
 
       matches =
         matches
-        |> Enum.filter(fn match -> match[:round] == lose_round end)
+        |> Enum.filter(fn match -> match.round == lose_round end)
         |> Enum.with_index()
         |> Enum.reduce(matches, fn {m, i}, acc ->
-          match = win_matches |> Enum.find(fn m -> m[:match] == Enum.at(fill, i) end)
+          match = win_matches |> Enum.find(fn m -> m.match == Enum.at(fill, i) end)
           acc = acc |> Enum.filter(fn m -> m != match end)
 
           match =
             Map.merge(match, %{
-              loss: %{
-                round: m[:round],
-                match: m[:match]
+              loss: %Match{
+                round: m.round,
+                match: m.match
               }
             })
 
@@ -294,7 +300,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
       win_round = win_round + 1
       lose_round = lose_round + 1
 
-      win_matches = matches |> Enum.filter(fn m -> m[:round] == win_round end)
+      win_matches = matches |> Enum.filter(fn m -> m.round == win_round end)
 
       fill = fill_pattern(length(win_matches), fill_count)
       fill_count = fill_count + 1
@@ -305,16 +311,16 @@ defmodule ExTournaments.Pairings.DoubleElimination do
       route_numbers =
         matches
         |> Enum.filter(fn match ->
-          match[:round] == 2 and (match[:player1] == nil or match[:player2] == nil)
+          match.round == 2 and (match.player1 == nil or match.player2 == nil)
         end)
-        |> Enum.sort_by(& &1[:match])
-        |> Enum.map(fn match -> trunc(:math.ceil(match[:match] / 2)) end)
+        |> Enum.sort_by(& &1.match)
+        |> Enum.map(fn match -> trunc(:math.ceil(match.match / 2)) end)
 
       route_copy = route_numbers
 
       %{matches: matches, route_copy: _route_copy, count_a: _count_a, count_b: _count_b} =
         matches
-        |> Enum.filter(fn match -> match[:round] == lose_round end)
+        |> Enum.filter(fn match -> match.round == lose_round end)
         |> Enum.reduce(
           %{matches: matches, route_copy: route_copy, count_a: count_a, count_b: count_b},
           fn m, %{matches: matches, route_copy: route_copy, count_a: count_a, count_b: count_b} ->
@@ -325,13 +331,13 @@ defmodule ExTournaments.Pairings.DoubleElimination do
                  %{matches: matches, route_copy: route_copy, count_a: count_a, count_b: count_b} ->
                 match =
                   win_matches
-                  |> Enum.find(fn match -> match[:match] == Enum.at(fill, count_a) end)
+                  |> Enum.find(fn match -> match.match == Enum.at(fill, count_a) end)
 
                 %{matches: matches, route_copy: route_copy, count_b: count_b} =
-                  if Enum.any?(route_copy, fn n -> n == m[:match] end) do
+                  if Enum.any?(route_copy, fn n -> n == m.match end) do
                     loss_match =
                       matches
-                      |> Enum.filter(fn x -> x[:round] == lose_round - 1 end)
+                      |> Enum.filter(fn x -> x.round == lose_round - 1 end)
                       |> Enum.at(count_b)
 
                     count_b = count_b + 1
@@ -340,9 +346,9 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
                     match =
                       Map.merge(match, %{
-                        loss: %{
-                          round: loss_match[:round],
-                          match: loss_match[:match]
+                        loss: %Match{
+                          round: loss_match.round,
+                          match: loss_match.match
                         }
                       })
 
@@ -350,7 +356,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
                     route_copy =
                       route_copy
-                      |> List.delete(m[:match])
+                      |> List.delete(m.match)
 
                     %{matches: matches, route_copy: route_copy, count_b: count_b}
                   else
@@ -358,9 +364,9 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
                     match =
                       Map.merge(match, %{
-                        loss: %{
-                          round: m[:round],
-                          match: m[:match]
+                        loss: %Match{
+                          round: m.round,
+                          match: m.match
                         }
                       })
 
@@ -382,22 +388,22 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
       matches =
         matches
-        |> Enum.filter(fn m -> m[:round] == round_diff + 1 end)
+        |> Enum.filter(fn m -> m.round == round_diff + 1 end)
         |> Enum.with_index()
         |> Enum.reduce(matches, fn {m, i}, acc ->
           match =
             acc
             |> Enum.find(fn x ->
-              x[:round] == m[:round] + 1 and x[:match] == Enum.at(route_numbers, i)
+              x.round == m.round + 1 and x.match == Enum.at(route_numbers, i)
             end)
 
           acc = acc |> Enum.filter(fn match -> match != m end)
 
           m =
             Map.merge(m, %{
-              win: %{
-                round: match[:round],
-                match: match[:match]
+              win: %Match{
+                round: match.round,
+                match: match.match
               }
             })
 
@@ -406,11 +412,11 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
       %{matches: matches, win_round: win_round, lose_round: lose_round, fill_count: fill_count}
     else
-      win_matches = matches |> Enum.filter(fn m -> m[:round] == win_round end)
-      lose_matches_a = matches |> Enum.filter(fn m -> m[:round] == lose_round end)
+      win_matches = matches |> Enum.filter(fn m -> m.round == win_round end)
+      lose_matches_a = matches |> Enum.filter(fn m -> m.round == lose_round end)
 
       lose_round = lose_round + 1
-      lose_matches_b = matches |> Enum.filter(fn m -> m[:round] == lose_round end)
+      lose_matches_b = matches |> Enum.filter(fn m -> m.round == lose_round end)
 
       fill = fill_pattern(length(win_matches), fill_count)
       fill_count = fill_count + 1
@@ -420,9 +426,9 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
       route_numbers =
         matches
-        |> Enum.sort_by(& &1[:match])
-        |> Enum.filter(fn m -> m[:round] == 2 and m[:player1] == nil and m[:player2] == nil end)
-        |> Enum.map(fn m -> m[:match] end)
+        |> Enum.sort_by(& &1.match)
+        |> Enum.filter(fn m -> m.round == 2 and m.player1 == nil and m.player2 == nil end)
+        |> Enum.map(fn m -> m.match end)
 
       %{matches: matches, count_a: _count_a, count_b: _count_b} =
         lose_matches_b
@@ -437,19 +443,19 @@ defmodule ExTournaments.Pairings.DoubleElimination do
                                                                                    } ->
           win_match_a =
             win_matches
-            |> Enum.find(fn x -> x[:match] == Enum.at(fill, count_a) end)
+            |> Enum.find(fn x -> x.match == Enum.at(fill, count_a) end)
 
           %{count_a: count_a, count_b: count_b, matches: matches} =
-            if Enum.any?(route_numbers, fn n -> n == m[:match] end) do
+            if Enum.any?(route_numbers, fn n -> n == m.match end) do
               loss_match = Enum.at(lose_matches_a, count_b)
 
               matches = matches |> Enum.filter(fn match -> match != win_match_a end)
 
               win_match_a =
                 Map.merge(win_match_a, %{
-                  loss: %{
-                    round: loss_match[:round],
-                    match: loss_match[:match]
+                  loss: %Match{
+                    round: loss_match.round,
+                    match: loss_match.match
                   }
                 })
 
@@ -460,15 +466,15 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
               win_match_b =
                 win_matches
-                |> Enum.find(fn x -> x[:match] == Enum.at(fill, count_a) end)
+                |> Enum.find(fn x -> x.match == Enum.at(fill, count_a) end)
 
               matches = matches |> Enum.filter(fn match -> match != win_match_b end)
 
               win_match_b =
                 Map.merge(win_match_b, %{
-                  loss: %{
-                    round: loss_match[:round],
-                    match: loss_match[:match]
+                  loss: %Match{
+                    round: loss_match.round,
+                    match: loss_match.match
                   }
                 })
 
@@ -480,9 +486,9 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
               win_match_a =
                 Map.merge(win_match_a, %{
-                  loss: %{
-                    round: m[:round],
-                    match: m[:match]
+                  loss: %Match{
+                    round: m.round,
+                    match: m.match
                   }
                 })
 
@@ -506,16 +512,16 @@ defmodule ExTournaments.Pairings.DoubleElimination do
           match =
             matches
             |> Enum.find(fn x ->
-              x[:round] == m[:round] + 1 and x[:match] == Enum.at(route_numbers, i)
+              x.round == m.round + 1 and x.match == Enum.at(route_numbers, i)
             end)
 
           acc = acc |> Enum.filter(fn match -> match != m end)
 
           m =
             Map.merge(m, %{
-              win: %{
-                round: match[:round],
-                match: match[:match]
+              win: %Match{
+                round: match.round,
+                match: match.match
               }
             })
 
@@ -561,7 +567,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
           true ->
             matches =
               Enum.reduce(0..trunc(:math.pow(2, match_exponent) - 1), matches, fn index, acc ->
-                match = %{
+                match = %Match{
                   round: round,
                   match: index + 1,
                   player1: nil,
@@ -574,11 +580,11 @@ defmodule ExTournaments.Pairings.DoubleElimination do
             matches =
               if iterated do
                 Enum.map(matches, fn match ->
-                  if match[:round] == round - 1 do
+                  if match.round == round - 1 do
                     Map.merge(match, %{
-                      win: %{
+                      win: %Match{
                         round: round,
-                        match: trunc(:math.ceil(match[:match] / 2))
+                        match: trunc(:math.ceil(match.match / 2))
                       }
                     })
                   else
@@ -620,7 +626,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
                Enum.reduce(0..trunc(:math.pow(2, loser_exponent) - 1), matches, fn j, acc_j ->
                  acc_j
                  |> Enum.concat([
-                   %{
+                   %Match{
                      round: round,
                      match: j + 1,
                      player1: nil,
@@ -647,8 +653,8 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
     first_round_matches =
       matches
-      |> Enum.filter(fn match -> match[:round] == first_round end)
-      |> Enum.sort_by(& &1[:match], :asc)
+      |> Enum.filter(fn match -> match.round == first_round end)
+      |> Enum.sort_by(& &1.match, :asc)
       |> Enum.with_index()
       |> Enum.map(fn {match, index} ->
         player1 =
@@ -666,7 +672,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
       end)
 
     matches
-    |> Enum.filter(fn match -> match[:round] != first_round end)
+    |> Enum.filter(fn match -> match.round != first_round end)
     |> Enum.concat(first_round_matches)
   end
 
@@ -674,7 +680,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     if remainder != 0 do
       {_, placed_matches} =
         matches
-        |> Enum.filter(fn match -> match[:round] == starting_round end)
+        |> Enum.filter(fn match -> match.round == starting_round end)
         |> Enum.with_index()
         |> Enum.map_reduce(matches, fn {match, index}, acc ->
           player1 = Enum.at(players_list, trunc(:math.pow(2, :math.floor(exponent)) + index))
@@ -683,14 +689,14 @@ defmodule ExTournaments.Pairings.DoubleElimination do
           next_match =
             acc
             |> Enum.filter(fn match ->
-              match[:round] == starting_round + 1
+              match.round == starting_round + 1
             end)
             |> Enum.find(fn match ->
-              match[:player1] == player2 or match[:player2] == player2
+              match.player1 == player2 or match.player2 == player2
             end)
 
           next_match =
-            if next_match[:player1] == player2 do
+            if next_match.player1 == player2 do
               Map.merge(next_match, %{
                 player1: nil
               })
@@ -704,7 +710,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
             Map.merge(match, %{
               player1: player1,
               player2: player2,
-              win: %{
+              win: %Match{
                 round: starting_round + 1,
                 match: next_match.match
               }
@@ -712,10 +718,8 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
           acc =
             acc
-            |> Enum.reject(&(&1[:round] == match[:round] and &1[:match] == match[:match]))
-            |> Enum.reject(
-              &(&1[:round] == next_match[:round] and &1[:match] == next_match[:match])
-            )
+            |> Enum.reject(&(&1.round == match.round and &1.match == match.match))
+            |> Enum.reject(&(&1.round == next_match.round and &1.match == next_match.match))
             |> Enum.concat([match, next_match])
 
           {match, acc}
@@ -730,7 +734,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
   defp placehold_initial_round(remainder, round) do
     if remainder !== 0 do
       Enum.map(0..(remainder - 1), fn index ->
-        %{
+        %Match{
           round: round,
           match: index + 1,
           player1: nil,
@@ -746,7 +750,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     if remainder <= trunc(:math.pow(2, :math.floor(exponent)) / 2) do
       matches =
         Enum.map(0..(remainder - 1), fn i ->
-          %{
+          %Match{
             round: round,
             match: i + 1,
             player1: nil,
@@ -761,7 +765,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     else
       matches =
         Enum.map(0..trunc(remainder - :math.pow(2, :math.floor(exponent) - 1) - 1), fn i ->
-          %{
+          %Match{
             round: round,
             match: i + 1,
             player1: nil,
@@ -774,7 +778,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
       matches =
         Enum.map(0..trunc(:math.pow(2, :math.floor(exponent) - 1) - 1), fn i ->
-          %{
+          %Match{
             round: round,
             match: i + 1,
             player1: nil,

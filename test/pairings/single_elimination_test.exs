@@ -9,6 +9,7 @@ defmodule ExTournaments.Pairings.SingleEliminationTest do
             "test/fixtures/pairings/single_elimination/single_elimination_#{unquote(num_of_participants)}_participants.json"
           )
           |> Jason.decode!(keys: :atoms)
+          |> Enum.map(&ExTournaments.Match.from_map(&1))
           |> Enum.sort_by(&{&1.round, &1.match})
 
         pairing =
@@ -33,6 +34,7 @@ defmodule ExTournaments.Pairings.SingleEliminationTest do
             "test/fixtures/pairings/single_elimination/consolation/single_elimination_consolation_#{unquote(num_of_participants)}_participants.json"
           )
           |> Jason.decode!(keys: :atoms)
+          |> Enum.map(&ExTournaments.Match.from_map(&1))
           |> Enum.sort_by(&{&1.round, &1.match})
 
         pairing =
