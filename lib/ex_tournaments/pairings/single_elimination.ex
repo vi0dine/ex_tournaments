@@ -88,18 +88,16 @@ defmodule ExTournaments.Pairings.SingleElimination do
     if :math.floor(exponent) >= 3 do
       Enum.reduce(3..trunc(:math.floor(exponent)), [1, 4, 2, 3], fn i, acc ->
         Enum.reduce_while(0..999, acc, fn j, acc_j ->
-          cond do
-            j <= length(acc_j) - 1 ->
-              if Integer.is_even(j) do
-                new_element = trunc(:math.pow(2, i) + 1 - Enum.at(acc_j, j))
+          if j <= length(acc_j) - 1 do
+            if Integer.is_even(j) do
+              new_element = trunc(:math.pow(2, i) + 1 - Enum.at(acc_j, j))
 
-                {:cont, List.insert_at(acc_j, j + 1, new_element)}
-              else
-                {:cont, acc_j}
-              end
-
-            true ->
-              {:halt, acc_j}
+              {:cont, List.insert_at(acc_j, j + 1, new_element)}
+            else
+              {:cont, acc_j}
+            end
+          else
+            {:halt, acc_j}
           end
         end)
       end)
@@ -233,8 +231,10 @@ defmodule ExTournaments.Pairings.SingleElimination do
 
           acc =
             acc
-            |> Enum.reject(&(&1.round == match.round and &1.match == match.match))
-            |> Enum.reject(&(&1.round == next_match.round and &1.match == next_match.match))
+            |> Enum.reject(
+              &((&1.round == match.round and &1.match == match.match) or
+                  (&1.round == next_match.round and &1.match == next_match.match))
+            )
             |> Enum.concat([match, next_match])
 
           {match, acc}
