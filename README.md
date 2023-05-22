@@ -18,7 +18,7 @@ Add to `mix.exs`
 defp deps do
   [
     ...
-    {:ex_tournaments, "~> 0.1.0"}
+    {:ex_tournaments, "~> 0.1.1"}
   ]
 end
 ```
