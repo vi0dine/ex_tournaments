@@ -6,6 +6,9 @@ defmodule ExTournaments.Utils.PairingHelpers do
 
   alias ExTournaments.Match
 
+  @doc """
+  Takes list of players IDs and according to the passed flag it will shuffle it.
+  """
   @spec prepare_players_list(list(integer()), boolean()) :: list(integer())
   def prepare_players_list(players, ordered) when is_list(players) do
     case ordered do
@@ -18,6 +21,9 @@ defmodule ExTournaments.Utils.PairingHelpers do
     Enum.map(1..players, & &1)
   end
 
+  @doc """
+  Calculate exponent and remainder of the players by the power of 2
+  """
   @spec calculate_factors(list(integer())) :: tuple()
   def calculate_factors(players) do
     exponent = :math.log2(length(players))
@@ -26,6 +32,9 @@ defmodule ExTournaments.Utils.PairingHelpers do
     {exponent, remainder}
   end
 
+  @doc """
+  Takes calculated exponent and return list of prefilled participants seed
+  """
   @spec prefill_bracket(float()) :: list(integer())
   def prefill_bracket(exponent) do
     if :math.floor(exponent) >= 3 do
@@ -37,6 +46,7 @@ defmodule ExTournaments.Utils.PairingHelpers do
     end
   end
 
+  @spec update_bracket(list(integer()), integer(), number()) :: list(integer())
   defp update_bracket(seeds, index, _exponent) when index > length(seeds) - 1, do: seeds
 
   defp update_bracket(seeds, index, exponent) do
@@ -49,6 +59,9 @@ defmodule ExTournaments.Utils.PairingHelpers do
     end
   end
 
+  @doc """
+  Takes calculated remainder and return list of matches for the preliminary round
+  """
   @spec generate_preliminary_matches(number(), integer()) :: list(Match.t())
   def generate_preliminary_matches(remainder, _round) when remainder == 0, do: []
 
@@ -63,6 +76,11 @@ defmodule ExTournaments.Utils.PairingHelpers do
     end)
   end
 
+  @doc """
+  Takes list of `%ExTournaments.Match{}` structs, round index, first round index, calculated exponents and flag to toggle function.
+
+  Returns tuple with a list of generated matches and count of rounds.
+  """
   @spec generate_regular_matches(
           list(Match.t()),
           non_neg_integer(),
@@ -123,6 +141,12 @@ defmodule ExTournaments.Utils.PairingHelpers do
     end)
   end
 
+  @doc """
+  Takes list of matches, list of seeds, first round index, list of players IDs and calculated remainder.
+  It will assign players to the matches by the list of seeds and shuffling algorithms.
+
+  Returns list of matches with assign players to the first round.
+  """
   @spec set_players_for_first_round(
           list(Match.t()),
           list(integer()),
@@ -173,6 +197,14 @@ defmodule ExTournaments.Utils.PairingHelpers do
     |> Enum.concat(first_round_matches)
   end
 
+  @doc """
+  Takes list of matches, first round index, list of players IDs and calculated exponent and remainder.
+  It will set BYE to the matches in the first round by the remainder.
+
+  Returns list of matches with assigned BYE.
+  """
+  @spec set_byes_for_first_round(list(Match.t()), list(integer()), integer(), number(), number()) ::
+          list(Match.t())
   def set_byes_for_first_round(matches, _players_list, _starting_round, _exponent, 0), do: matches
 
   def set_byes_for_first_round(matches, players_list, starting_round, exponent, _remainder) do
@@ -189,6 +221,7 @@ defmodule ExTournaments.Utils.PairingHelpers do
     end)
   end
 
+  @spec found_next_match(list(Match.t()), integer(), integer()) :: Match.t()
   defp found_next_match(matches, starting_round, player2) do
     matches
     |> Enum.filter(fn match ->
@@ -199,6 +232,7 @@ defmodule ExTournaments.Utils.PairingHelpers do
     end)
   end
 
+  @spec assign_bye(Match.t(), integer()) :: Match.t()
   defp assign_bye(next_match, player2) when next_match.player1 == player2 do
     Map.merge(next_match, %{
       player1: nil
@@ -211,6 +245,7 @@ defmodule ExTournaments.Utils.PairingHelpers do
     })
   end
 
+  @spec update_match_data(Match.t(), integer(), integer(), integer(), Match.t()) :: Match.t()
   defp update_match_data(match, player1, player2, starting_round, next_match) do
     Map.merge(match, %{
       player1: player1,
@@ -222,6 +257,7 @@ defmodule ExTournaments.Utils.PairingHelpers do
     })
   end
 
+  @spec update_matches_list(list(Match.t()), Match.t(), Match.t()) :: list(Match.t())
   defp update_matches_list(matches, match, next_match) do
     matches
     |> Enum.reject(
@@ -231,6 +267,13 @@ defmodule ExTournaments.Utils.PairingHelpers do
     |> Enum.concat([match, next_match])
   end
 
+  @doc """
+  Takes count of matches and number of the current fill iteration.
+  It will generate fill pattern to build matches flow.
+
+  Returns list of number for matches flow.
+  """
+  @spec fill_pattern(integer(), integer()) :: list(integer())
   def fill_pattern(match_count, fill_count) do
     a = Enum.map(0..(match_count - 1), &(&1 + 1))
     c = rem(fill_count, 4)

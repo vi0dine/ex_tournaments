@@ -10,10 +10,16 @@ defmodule ExTournaments.Pairings.DoubleElimination do
 
   alias ExTournaments.Pairings.DoubleElimination.{
     BuildLowerBracket,
-    BuildMatchesFlow,
+    BuildLowerBracketFlow,
+    BuildUpperBracketFlow,
     FillRoundsByes
   }
 
+  @doc """
+  Takes list with players IDs, index of the first round, and flag indicating is players array is ordered.
+
+  Returns list of `%ExTournaments.Match{}` structs for the double elimination format tournament.
+  """
   @spec call(list(integer()), non_neg_integer(), boolean()) :: list(Match.t())
   def call(players, starting_round, ordered \\ false) do
     players_list = PairingHelpers.prepare_players_list(players, ordered)
@@ -56,7 +62,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     matches = BuildLowerBracket.call(matches, round, :math.floor(exponent) - 2)
 
     %{matches: matches, fill_count: fill_count, win_round: win_round, lose_round: lose_round} =
-      BuildMatchesFlow.call(
+      BuildUpperBracketFlow.call(
         matches,
         starting_round,
         round_diff + 1,
@@ -69,48 +75,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     matches =
       assign_on_loss_matches(matches, win_round, win_round, lose_round, round_diff, fill_count, 0)
 
-    start = if remainder == 0, do: round_diff + 1, else: round_diff + 2
-
-    finish =
-      Enum.reduce(matches, 0, fn match, acc ->
-        Enum.max([acc, match.round])
-      end)
-
-    %{matches: matches} =
-      Enum.reduce(start..finish, %{matches: matches}, fn i, %{matches: matches} ->
-        lose_matches_a =
-          matches
-          |> Enum.filter(fn m -> m.round == i end)
-
-        lose_matches_b =
-          matches
-          |> Enum.filter(fn m -> m.round == i + 1 end)
-
-        lose_matches_a
-        |> Enum.with_index()
-        |> Enum.reduce(%{matches: matches}, fn {m, j}, %{matches: matches} ->
-          match =
-            if length(lose_matches_a) == length(lose_matches_b) do
-              Enum.at(lose_matches_b, j)
-            else
-              Enum.at(lose_matches_b, trunc(:math.floor(j / 2)))
-            end
-
-          matches = matches |> Enum.filter(fn match -> match != m end)
-
-          m =
-            Map.merge(m, %{
-              win: %Match{
-                round: get_in(match, [Access.key!(:round)]),
-                match: get_in(match, [Access.key!(:match)])
-              }
-            })
-
-          matches = matches |> Enum.concat([m])
-
-          %{matches: matches}
-        end)
-      end)
+    matches = BuildLowerBracketFlow.call(matches, remainder, round_diff)
 
     filter =
       matches
@@ -136,6 +101,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     Enum.sort_by(matches, & &1.round, :asc)
   end
 
+  @spec prepend_first_match(list(Match.t()), non_neg_integer()) :: list(Match.t())
   defp prepend_first_match(matches, round) do
     [
       %Match{
@@ -148,6 +114,7 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     ]
   end
 
+  @spec assign_on_win_match(Match.t(), non_neg_integer()) :: Match.t()
   defp assign_on_win_match(match, round) when match.round != round - 1, do: match
 
   defp assign_on_win_match(match, round) do
@@ -159,6 +126,15 @@ defmodule ExTournaments.Pairings.DoubleElimination do
     })
   end
 
+  @spec assign_on_loss_matches(
+          list(Match.t()),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          integer(),
+          integer(),
+          integer()
+        ) :: list(Match.t())
   defp assign_on_loss_matches(
          matches,
          round_index,

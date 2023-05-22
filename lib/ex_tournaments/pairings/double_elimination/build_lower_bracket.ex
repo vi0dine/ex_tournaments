@@ -1,6 +1,17 @@
 defmodule ExTournaments.Pairings.DoubleElimination.BuildLowerBracket do
+  @moduledoc """
+  Module for populating matches in the lower bracket
+  """
+
   alias ExTournaments.Match
 
+  @doc """
+  Takes existing list of `%ExTournaments.Match{}` structs, current round index and exponent.
+  It append matches for the lower bracket.
+
+  Returns list of `%ExTournaments.Match{}` structs with newly created matches for the lower bracket.
+  """
+  @spec call(list(Match.t()), non_neg_integer(), number()) :: list(Match.t())
   def call(matches, _round, loser_exponent) when loser_exponent <= -1, do: matches
 
   def call(matches, round, loser_exponent) do

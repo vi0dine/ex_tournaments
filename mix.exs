@@ -7,12 +7,14 @@ defmodule ExTournaments.MixProject do
       version: "0.1.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
       deps: deps(),
       name: "ExTournaments",
-      source_url: "https://github.com/vi0dine/ex_tournaments"
+      source_url: "https://github.com/vi0dine/ex_tournaments",
+      test_coverage: [
+        summary: [threshold: 90]
+      ]
     ]
   end
 

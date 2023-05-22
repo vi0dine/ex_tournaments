@@ -1,7 +1,33 @@
 defmodule ExTournaments.Pairings.DoubleElimination.FlowTypes.BuildTypeTwoFlow do
+  @moduledoc """
+  Module for building matches flow in the upper bracket when remainder of participants is lower than half of them
+  """
+
   alias ExTournaments.Match
   alias ExTournaments.Utils.PairingHelpers
 
+  @doc """
+  Takes existing list of `%ExTournaments.Match{}` structs, indices of the round in the upper and lower bracket, difference between this indices,
+  remainder and exponent from the difference between number of participants and power of 2.
+
+  It will populate flow for the case when remainder is lower than half of participant to the nearest power of 2.
+
+  Returns list of `%ExTournaments.Match{}` structs with updated values for next matches after win or loss in the upper bracket.
+  """
+  @spec call(
+          list(Match.t()),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          integer(),
+          number(),
+          number()
+        ) :: %{
+          fill_count: non_neg_integer(),
+          lose_round: non_neg_integer(),
+          matches: list(Match.t()),
+          win_round: non_neg_integer()
+        }
   def call(
         matches,
         win_round,

@@ -1,5 +1,6 @@
 defmodule ExTournaments.Pairings.SingleEliminationTest do
   use ExUnit.Case
+  doctest ExTournaments.Pairings.SingleElimination
 
   describe "call/3 without 3rd place match" do
     for num_of_participants <- [4, 6, 8, 11, 17, 25, 32, 40, 47, 60, 88, 110, 129, 256, 312] do

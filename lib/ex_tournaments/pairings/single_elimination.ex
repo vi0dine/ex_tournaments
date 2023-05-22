@@ -8,6 +8,12 @@ defmodule ExTournaments.Pairings.SingleElimination do
   alias ExTournaments.Match
   alias ExTournaments.Utils.PairingHelpers
 
+  @doc """
+  Takes list with players IDs, index of the first round, flag indicating is third place match should be created
+  and flag indicating is players array is ordered.
+
+  Returns list of `%ExTournaments.Match{}` structs for the single elimination format tournament.
+  """
   @spec call(list(integer()), integer(), boolean(), boolean()) :: list(Match.t())
   def call(players, starting_round \\ 1, consolation \\ false, ordered \\ false) do
     players_list = PairingHelpers.prepare_players_list(players, ordered)
@@ -74,11 +80,13 @@ defmodule ExTournaments.Pairings.SingleElimination do
     end)
   end
 
+  @spec get_last_round(list(Match.t())) :: non_neg_integer()
   defp get_last_round(matches) do
     matches
     |> Enum.reduce(0, &Enum.max([&2, &1.round]))
   end
 
+  @spec get_last_match(list(Match.t()), non_neg_integer()) :: non_neg_integer()
   defp get_last_match(matches, last_round) do
     matches
     |> Enum.filter(&(&1.round == last_round))
