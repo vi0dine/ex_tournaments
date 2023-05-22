@@ -4,15 +4,17 @@ defmodule ExTournaments.MixProject do
   def project do
     [
       app: :ex_tournaments,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.14",
-      start_permanent: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
       deps: deps(),
       name: "ExTournaments",
-      source_url: "https://github.com/vi0dine/ex_tournaments"
+      source_url: "https://github.com/vi0dine/ex_tournaments",
+      test_coverage: [
+        summary: [threshold: 90]
+      ]
     ]
   end
 
@@ -32,6 +34,8 @@ defmodule ExTournaments.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
       {:doctor, "~> 0.21.0", only: :dev},
+      {:versioce, "~> 2.0.0", only: :dev},
+      {:git_cli, "~> 0.3.0", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end

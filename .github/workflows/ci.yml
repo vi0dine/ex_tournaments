@@ -14,5 +14,13 @@ jobs:
         with:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
-      - run: mix deps.get
-      - run: mix test
+      - name: "Get deps"
+        run: mix deps.get
+      - name: "Check code quality"
+        run: mix credo
+      - name: "Typecheck"
+        run: mix dialyzer
+      - name: "Run tests"
+        run: mix test --cover
+      - name: "Check docs"
+        run: mix doctor
