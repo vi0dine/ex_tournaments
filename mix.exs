@@ -34,6 +34,8 @@ defmodule ExTournaments.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
       {:doctor, "~> 0.21.0", only: :dev},
+      {:versioce, "~> 2.0.0", only: :dev},
+      {:git_cli, "~> 0.3.0", only: :dev},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
