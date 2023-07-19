@@ -31,6 +31,7 @@ defmodule ExTournaments.MixProject do
     [
       {:jason, "~> 1.4"},
       {:typed_struct, "~> 0.3.0"},
+      {:rustler, "~> 0.29.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
       {:doctor, "~> 0.21.0", only: :dev},
