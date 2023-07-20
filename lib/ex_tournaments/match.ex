@@ -12,8 +12,8 @@ defmodule ExTournaments.Match do
     field(:match, non_neg_integer())
     field(:player1, non_neg_integer())
     field(:player2, non_neg_integer())
-    field(:win, __MODULE__.t())
-    field(:loss, __MODULE__.t())
+    field(:win, __MODULE__.t() | nil)
+    field(:loss, __MODULE__.t() | nil)
   end
 
   @doc """

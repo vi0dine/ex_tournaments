@@ -1,5 +1,8 @@
 import Config
 
+config :logger,
+  level: :info
+
 config :versioce,
   post_hooks: [Versioce.PostHooks.Changelog]
 

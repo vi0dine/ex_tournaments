@@ -1,8 +1,11 @@
 # ExTournaments
 
-Simple package for tournaments management system which aims to help organizers with:
+Simple package for tournaments management systems which aims to help organizers with:
 
-- participants pairings (single elimination, double elimination)
+- Participants pairing:
+  - Single Elimination
+  - Double Elimination
+  - Swiss
 
 ## Description
 
@@ -18,7 +21,7 @@ Add to `mix.exs`
 defp deps do
   [
     ...
-    {:ex_tournaments, "~> 0.1.1"}
+    {:ex_tournaments, "~> 0.2.0"}
   ]
 end
 ```
@@ -54,6 +57,31 @@ defmodule Example.Double do
 end
 ```
 
+### Swiss
+
+```elixir
+defmodule Example.Swiss do
+  alias ExTournaments.Pairings.Swiss
+
+  def call do
+    players = Enum.map(0..20, fn p_index ->
+      %Player{
+        id: "player_#{p_index}",
+        index: nil,
+        score: p_index * 3,
+        paired_up_down: false,
+        received_bye: false,
+        avoid: [],
+        colors: [],
+        rating: p_index * 2
+      }
+    end)
+
+    ExTournaments.Pairings.Swiss.generate_round(players, 1)
+  end
+end
+```
+
 ### Results
 
 Matches will be a list of `ExTournaments.Match` structs:
@@ -80,6 +108,10 @@ Matches will be a list of `ExTournaments.Match` structs:
 Krzysztof Janiec (viodine@yahoo.com)
 
 ## Version History
+
+- 0.2.0
+
+  - Swiss round creation using Edmond's Blossom algorithm.
 
 - 0.1.0
   - Initial Release with single and double elimination pairing creation.
