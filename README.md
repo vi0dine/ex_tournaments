@@ -21,7 +21,7 @@ Add to `mix.exs`
 defp deps do
   [
     ...
-    {:ex_tournaments, "~> 0.2.0"}
+    {:ex_tournaments, "~> 0.2.1"}
   ]
 end
 ```
@@ -109,7 +109,7 @@ Krzysztof Janiec (viodine@yahoo.com)
 
 ## Version History
 
-- 0.2.0
+- 0.2.1
 
   - Swiss round creation using Edmond's Blossom algorithm.
 
