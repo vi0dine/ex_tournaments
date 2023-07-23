@@ -4,7 +4,7 @@ defmodule ExTournaments.MixProject do
   def project do
     [
       app: :ex_tournaments,
-      version: "0.2.0",
+      version: "0.2.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -48,7 +48,8 @@ defmodule ExTournaments.MixProject do
   defp package() do
     [
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/vi0dine/ex_tournaments"}
+      links: %{"GitHub" => "https://github.com/vi0dine/ex_tournaments"},
+      files: ~w(lib priv native mix.exs README.md CHANGELOG.md)
     ]
   end
 end
