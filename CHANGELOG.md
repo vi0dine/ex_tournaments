@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
+## [0.2.1]
+### Fixed
+- fix: :ambulance: add rustler files to released package
+
 ## [0.2.0]
 ### Changed
 - docs: :memo: update readme
@@ -11,7 +15,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - feat: :zap: add rust implementation of the blossom algorithm
 - feat: :sparkles: init blossom algorithm implementation
 
+### Deprecated
+- chore: :bookmark: bump version to 0.2.0
+
 ### Other
+- Merge branch release/0.2.0
 - Merge pull request #1 from vi0dine/feature/swiss_format
 
 Feature/swiss format
