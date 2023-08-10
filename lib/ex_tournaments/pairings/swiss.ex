@@ -216,14 +216,17 @@ defmodule ExTournaments.Pairings.Swiss do
         }
       end)
 
-    byes = [
-      %ExTournaments.Match{
-        round: round,
-        match: length(regular) + 1,
-        player1: bye,
-        player2: nil
-      }
-    ]
+    byes =
+      if is_nil(bye),
+        do: [],
+        else: [
+          %ExTournaments.Match{
+            round: round,
+            match: length(regular) + 1,
+            player1: bye,
+            player2: nil
+          }
+        ]
 
     regular ++ byes
   end
