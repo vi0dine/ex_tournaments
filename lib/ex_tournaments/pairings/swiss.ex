@@ -36,8 +36,10 @@ defmodule ExTournaments.Pairings.Swiss do
       |> Enum.sort()
 
     pairs =
-      build_pairs(players, rated, colors, score_pools, score_sums)
-      |> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)})
+      players
+      |> assign_bye()
+      |> build_pairs(rated, colors, score_pools, score_sums)
+      |> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)}, :asc)
       |> format_for_matching()
       |> EdmondsBlossom.call()
 
@@ -105,7 +107,7 @@ defmodule ExTournaments.Pairings.Swiss do
 
           group_diff_factor =
             if score_group_diff < 2,
-              do: 3 / :math.log10(score_group_diff + 2),
+              do: 8 / :math.log10(score_group_diff + 2),
               else: 1 / :math.log10(score_group_diff + 2)
 
           weight = weight + group_diff_factor
@@ -148,14 +150,14 @@ defmodule ExTournaments.Pairings.Swiss do
                 end)
 
               cond do
-                length(current.colors) > 1 and Enum.take(current.colors, -2) == "ww" ->
+                length(current.colors) > 1 and Enum.take(current.colors, -2) == ["w", "w"] ->
                   cond do
                     Enum.join(Enum.take(opponent.colors, -2)) == "ww" -> weight
                     Enum.join(Enum.take(opponent.colors, -2)) == "bb" -> weight + 7
                     true -> weight + 2 / :math.log(4 - abs(opponent_score))
                   end
 
-                length(current.colors) > 1 and Enum.take(current.colors, -2) == "bb" ->
+                length(current.colors) > 1 and Enum.take(current.colors, -2) == ["b", "b"] ->
                   cond do
                     Enum.join(Enum.take(opponent.colors, -2)) == "bb" -> weight
                     Enum.join(Enum.take(opponent.colors, -2)) == "ww" -> weight + 8
@@ -176,7 +178,7 @@ defmodule ExTournaments.Pairings.Swiss do
               weight
             end
 
-          {:cont, acc ++ [{current.index, opponent.index, weight}]}
+          {:cont, acc ++ [{current.index, opponent.index, Float.round(weight / 100, 2)}]}
         end
       end)
     end)
@@ -184,6 +186,10 @@ defmodule ExTournaments.Pairings.Swiss do
 
   defp format_for_matching(pairs) do
     pairs
+    |> Enum.reduce([], fn {v1, v2, weight} = edge, acc ->
+      reversed_edge = {v2, v1, weight}
+      acc ++ [edge, reversed_edge]
+    end)
     |> Enum.group_by(&elem(&1, 0))
     |> Enum.map(fn {vertex, edges_data} ->
       %Vertex{
@@ -193,6 +199,19 @@ defmodule ExTournaments.Pairings.Swiss do
       }
     end)
   end
+
+  defp assign_bye(players) when rem(length(players), 2) !== 0 do
+    bye =
+      players
+      |> Enum.reject(fn player ->
+        player.received_bye
+      end)
+      |> Enum.random()
+
+    Enum.reject(players, &(&1.id == bye.id))
+  end
+
+  defp assign_bye(players), do: players
 
   defp find_player_with_bye(players, pairs) do
     players_indices = Enum.map(players, & &1.index)
