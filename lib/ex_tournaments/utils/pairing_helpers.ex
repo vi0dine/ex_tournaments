@@ -37,12 +37,12 @@ defmodule ExTournaments.Utils.PairingHelpers do
   """
   @spec prefill_bracket(float()) :: list(integer())
   def prefill_bracket(exponent) do
-    if :math.floor(exponent) >= 3 do
-      Enum.reduce(3..trunc(:math.floor(exponent)), [1, 4, 2, 3], fn exponent, seeds ->
+    case :math.floor(exponent) do
+      result when result >= 3 -> Enum.reduce(3..trunc(result), [1, 4, 2, 3], fn exponent, seeds ->
         update_bracket(seeds, 0, exponent)
       end)
-    else
-      [1, 4, 2, 3]
+      result when result >= 2 -> [1, 4, 2, 3]
+      result when result >= 1 -> [1, 2]
     end
   end
 
