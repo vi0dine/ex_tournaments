@@ -201,12 +201,27 @@ defmodule ExTournaments.Pairings.Swiss do
   end
 
   defp assign_bye(players) when rem(length(players), 2) !== 0 do
-    bye =
-      players
+    # we might want to add a parameter to specify
+    # :swiss or :"2lo" different logic for :swiss
+    not_previous_bye_list = players
       |> Enum.reject(fn player ->
         player.received_bye
       end)
+
+    one_loss_players =
+      not_previous_bye_list
+      |> Enum.filter(&(&1.score == 1))
+    # if the 1 loss player list that have not got a bye
+    # is not empty, we take a random element from the list
+    bye = if Enum.empty?(one_loss_players) do
+      not_previous_bye_list
       |> Enum.random()
+    else
+    # otherwise we take a random element from the list
+    # of player that have not got a bye yet
+      one_loss_players
+      |> Enum.random()
+    end
 
     Enum.reject(players, &(&1.id == bye.id))
   end
