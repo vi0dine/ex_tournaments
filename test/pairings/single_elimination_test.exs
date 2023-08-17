@@ -53,15 +53,14 @@ defmodule ExTournaments.Pairings.SingleEliminationTest do
   end
 
   describe "generate_matches_for_3_players" do
-    matches = ExTournaments.Pairings.SingleElimination.call([1,2,3], 1, false, false)
+    matches = ExTournaments.Pairings.SingleElimination.call([1, 2, 3], 1, false, false)
     assert Enum.count(matches) == 2
   end
 
   describe "generate_match_for_2_players" do
-    matches = ExTournaments.Pairings.SingleElimination.call([1,2], 1, false, false)
+    matches = ExTournaments.Pairings.SingleElimination.call([1, 2], 1, false, false)
     [match] = matches
     # check if player 1 and player 2 are assigned
     assert not is_nil(match.player1) && not is_nil(match.player2)
-
   end
 end
