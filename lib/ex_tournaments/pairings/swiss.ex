@@ -37,7 +37,7 @@ defmodule ExTournaments.Pairings.Swiss do
 
     pairs =
       players
-      |> assign_bye()
+      |> assign_bye(score_pools)
       |> build_pairs(rated, colors, score_pools, score_sums)
       |> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)}, :asc)
       |> format_for_matching()
@@ -200,18 +200,28 @@ defmodule ExTournaments.Pairings.Swiss do
     end)
   end
 
-  defp assign_bye(players) when rem(length(players), 2) !== 0 do
+  defp assign_bye(players, score_pools) when rem(length(players), 2) !== 0 do
+    max_score_pool = Enum.max(score_pools)
+
     bye =
       players
       |> Enum.reject(fn player ->
         player.received_bye
       end)
+      |> Enum.filter(&(&1.score == max_score_pool))
       |> Enum.random()
+
+    bye =
+      if is_nil(bye) do
+        Enum.random(players)
+      else
+        bye
+      end
 
     Enum.reject(players, &(&1.id == bye.id))
   end
 
-  defp assign_bye(players), do: players
+  defp assign_bye(players, _score_pools), do: players
 
   defp find_player_with_bye(players, pairs) do
     players_indices = Enum.map(players, & &1.index)
