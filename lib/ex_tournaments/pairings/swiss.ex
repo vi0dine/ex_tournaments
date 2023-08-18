@@ -171,12 +171,14 @@ defmodule ExTournaments.Pairings.Swiss do
               weight
             end
 
-          weight =
-            if current.received_bye || opponent.received_bye do
-              weight * 1.5
-            else
-              weight
-            end
+          # TODO: Extract weight calculation to separate func/module and take factors from params
+
+          # weight =
+          #   if current.received_bye || opponent.received_bye do
+          #     weight * 1.5
+          #   else
+          #     weight
+          #   end
 
           {:cont, acc ++ [{current.index, opponent.index, Float.round(weight / 100, 2)}]}
         end
