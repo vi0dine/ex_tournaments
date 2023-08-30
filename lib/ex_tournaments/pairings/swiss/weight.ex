@@ -1,4 +1,7 @@
 defmodule ExTournaments.Pairings.Swiss.Weight do
+  @moduledoc """
+  Helpers for weights calculation in Swiss
+  """
   def calculate_weight(
         challenger,
         opponent,
@@ -9,30 +12,33 @@ defmodule ExTournaments.Pairings.Swiss.Weight do
           sorted_players: [],
           colors: false,
           bye_factor: 1.5,
-          up_down_factor: 1.2
+          up_down_factor: 1.2,
+          group_diff_factor: 3
         ]
       ) do
     score_group_diff = abs(score_group_index)
 
     base_weight(score_sum_index)
-    |> weight_by_group_diff(score_group_diff)
+    |> weight_by_group_diff(score_group_diff, opts)
     |> weight_by_up_down_pairing(challenger, opponent, score_group_diff, opts)
     |> weight_by_rating(opponent, opts)
     |> weight_by_colors(challenger, opponent, opts)
     |> weight_by_byes(challenger, opponent, opts)
     |> Kernel./(100)
-    |> Float.round(2)
+    |> Float.round(4)
   end
 
   defp base_weight(score_sum_index) do
     14 * :math.log10(score_sum_index + 1)
   end
 
-  defp weight_by_group_diff(weight, score_group_diff) when score_group_diff < 2 do
-    weight + 8 / :math.log10(score_group_diff + 2)
+  defp weight_by_group_diff(weight, score_group_diff, opts) when score_group_diff < 2 do
+    group_diff_factor = Keyword.get(opts, :group_diff_factor, 3)
+
+    weight + group_diff_factor / :math.log10(score_group_diff + 2)
   end
 
-  defp weight_by_group_diff(weight, score_group_diff) do
+  defp weight_by_group_diff(weight, score_group_diff, _opts) do
     weight + 1 / :math.log10(score_group_diff + 2)
   end
 

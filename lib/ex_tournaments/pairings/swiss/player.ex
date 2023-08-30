@@ -1,4 +1,7 @@
 defmodule ExTournaments.Pairings.Swiss.Player do
+  @moduledoc """
+  Helper struct for Swiss pairing
+  """
   use TypedStruct
 
   typedstruct do
