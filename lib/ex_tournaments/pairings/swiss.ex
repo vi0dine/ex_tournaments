@@ -3,18 +3,23 @@ defmodule ExTournaments.Pairings.Swiss do
   Module for creation of a Swiss format round
   """
 
+  require Logger
+
   alias ExTournaments.Utils.EdmondsBlossom
   alias ExTournaments.Utils.EdmondsBlossom.Vertex
 
   alias ExTournaments.Pairings.Swiss.Weight
+  alias ExTournaments.Utils.PairingHelpers
 
   def generate_round(
         players,
         round,
         opts \\ [
+          ordered: false,
           rated: false,
           colors: false,
           bye_factor: 1.5,
+          byes_by_seed: false,
           up_down_factor: 1.2
         ]
       ) do
@@ -22,7 +27,7 @@ defmodule ExTournaments.Pairings.Swiss do
       players
       |> assign_rating(opts)
       |> assign_colors(opts)
-      |> Enum.shuffle()
+      |> PairingHelpers.prepare_players_list(opts[:ordered])
       |> Enum.with_index()
       |> Enum.map(fn {player, index} ->
         %{player | index: index}
@@ -48,15 +53,36 @@ defmodule ExTournaments.Pairings.Swiss do
 
     pairs =
       players
-      |> assign_bye(score_pools)
+      |> assign_bye(score_pools, opts)
       |> build_pairs(score_pools, score_sums, opts)
       |> Enum.sort_by(&{elem(&1, 0), elem(&1, 1)}, :asc)
+
+    matching =
+      pairs
       |> format_for_matching()
       |> EdmondsBlossom.call()
 
-    bye_player = find_player_with_bye(players, pairs)
+    matching_weight = calculate_weight(pairs, matching)
 
-    generate_matches(round, players, pairs, bye_player)
+    Logger.info("Overall matching weight is #{matching_weight}.")
+
+    bye_player = find_player_with_bye(players, matching)
+
+    generate_matches(round, players, matching, bye_player)
+  end
+
+  # DEBUG
+  defp calculate_weight(pairs, matching) do
+    Enum.reduce(matching, 0, fn %{player_1: player_1, player_2: player_2}, acc ->
+      {_, _, weight} =
+        Enum.find(pairs, fn {p1, p2, _wt} ->
+          p1 == player_1 and p2 == player_2
+        end)
+
+      Logger.info("Weight for #{player_1} and #{player_2} is #{weight}.")
+
+      acc + weight
+    end)
   end
 
   defp assign_rating(players, opts) do
@@ -146,28 +172,37 @@ defmodule ExTournaments.Pairings.Swiss do
     end)
   end
 
-  defp assign_bye(players, score_pools) when rem(length(players), 2) !== 0 do
+  defp assign_bye(players, score_pools, opts) when rem(length(players), 2) !== 0 do
     max_score_pool = Enum.max(score_pools)
+    byes_by_seed = Keyword.get(opts, :byes_by_seed)
 
-    bye =
+    byes_pool =
       players
       |> Enum.reject(fn player ->
         player.received_bye
       end)
       |> Enum.filter(&(&1.score == max_score_pool))
-      |> Enum.random()
+
+    byes_pool =
+      if byes_pool == [] do
+        players
+      else
+        byes_pool
+      end
 
     bye =
-      if is_nil(bye) do
-        Enum.random(players)
+      if byes_by_seed do
+        byes_pool
+        |> Enum.sort_by(& &1.index)
+        |> List.first()
       else
-        bye
+        Enum.random(byes_pool)
       end
 
     Enum.reject(players, &(&1.id == bye.id))
   end
 
-  defp assign_bye(players, _score_pools), do: players
+  defp assign_bye(players, _score_pools, _opts), do: players
 
   defp find_player_with_bye(players, pairs) do
     players_indices = Enum.map(players, & &1.index)
