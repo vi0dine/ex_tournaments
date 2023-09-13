@@ -24,8 +24,6 @@ defmodule ExTournaments.Pairings.Swiss.Weight do
     |> weight_by_rating(opponent, opts)
     |> weight_by_colors(challenger, opponent, opts)
     |> weight_by_byes(challenger, opponent, opts)
-    |> Kernel./(100)
-    |> Float.round(4)
   end
 
   defp base_weight(score_sum_index) do
@@ -70,30 +68,40 @@ defmodule ExTournaments.Pairings.Swiss.Weight do
   defp weight_by_colors(weight, challenger, opponent, opts) do
     weight_by_colors = Keyword.get(opts, :colors, false)
 
-    if weight_by_colors do
-      challenger_color_score = calculate_color_score(challenger)
-      opponent_color_score = calculate_color_score(opponent)
+    colors_weight(weight, challenger, opponent, weight_by_colors)
+  end
 
-      cond do
-        length(challenger.colors) > 1 and Enum.take(challenger.colors, -2) == ["w", "w"] ->
-          cond do
-            Enum.join(Enum.take(opponent.colors, -2)) == "ww" -> weight
-            Enum.join(Enum.take(opponent.colors, -2)) == "bb" -> weight + 7
-            true -> weight + 2 / :math.log(4 - abs(opponent_color_score))
-          end
+  defp colors_weight(weight, _challenger, _opponent, false), do: weight
 
-        length(challenger.colors) > 1 and Enum.take(challenger.colors, -2) == ["b", "b"] ->
-          cond do
-            Enum.join(Enum.take(opponent.colors, -2)) == "bb" -> weight
-            Enum.join(Enum.take(opponent.colors, -2)) == "ww" -> weight + 8
-            true -> weight + 2 / :math.log(4 - abs(opponent_color_score))
-          end
+  defp colors_weight(weight, challenger, opponent, true) do
+    challenger_color_score = calculate_color_score(challenger)
+    opponent_color_score = calculate_color_score(opponent)
 
-        true ->
-          5 / (4 * :math.log10(6 - abs(challenger_color_score - opponent_color_score)))
-      end
-    else
-      weight
+    cond do
+      length(challenger.colors) > 1 and Enum.take(challenger.colors, -2) == ["w", "w"] ->
+        double_white_case(opponent, weight, opponent_color_score)
+
+      length(challenger.colors) > 1 and Enum.take(challenger.colors, -2) == ["b", "b"] ->
+        double_black_case(opponent, weight, opponent_color_score)
+
+      true ->
+        5 / (4 * :math.log10(6 - abs(challenger_color_score - opponent_color_score)))
+    end
+  end
+
+  defp double_white_case(opponent, weight, opponent_color_score) do
+    cond do
+      Enum.join(Enum.take(opponent.colors, -2)) == "ww" -> weight
+      Enum.join(Enum.take(opponent.colors, -2)) == "bb" -> weight + 7
+      true -> weight + 2 / :math.log(4 - abs(opponent_color_score))
+    end
+  end
+
+  defp double_black_case(opponent, weight, opponent_color_score) do
+    cond do
+      Enum.join(Enum.take(opponent.colors, -2)) == "bb" -> weight
+      Enum.join(Enum.take(opponent.colors, -2)) == "ww" -> weight + 8
+      true -> weight + 2 / :math.log(4 - abs(opponent_color_score))
     end
   end
 

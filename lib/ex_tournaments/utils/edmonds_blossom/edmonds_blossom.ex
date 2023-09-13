@@ -5,6 +5,10 @@ defmodule ExTournaments.Utils.EdmondsBlossom do
 
   use Rustler, otp_app: :ex_tournaments, crate: "ex_tournaments_blossom"
 
-  # When your NIF is loaded, it will override this function.
+  @doc """
+  Takes list of Vertex structs.
+
+  Returns blossom algorithm pairing for given players.
+  """
   def call(_edges), do: :erlang.nif_error(:nif_not_loaded)
 end

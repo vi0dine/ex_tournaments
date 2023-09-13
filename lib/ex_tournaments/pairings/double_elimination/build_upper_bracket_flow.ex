@@ -17,7 +17,7 @@ defmodule ExTournaments.Pairings.DoubleElimination.BuildUpperBracketFlow do
   Returns list of `%ExTournaments.Match{}` structs with updated values for next matches after win or loss in the upper bracket.
   """
   @spec call(
-          list(Match.t()),
+          list(ExTournaments.Match.t()),
           non_neg_integer(),
           non_neg_integer(),
           non_neg_integer(),
@@ -27,7 +27,7 @@ defmodule ExTournaments.Pairings.DoubleElimination.BuildUpperBracketFlow do
         ) :: %{
           fill_count: non_neg_integer(),
           lose_round: non_neg_integer(),
-          matches: list(Match.t()),
+          matches: list(ExTournaments.Match.t()),
           win_round: non_neg_integer()
         }
   def call(

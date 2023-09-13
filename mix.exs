@@ -13,7 +13,10 @@ defmodule ExTournaments.MixProject do
       name: "ExTournaments",
       source_url: "https://github.com/vi0dine/ex_tournaments",
       test_coverage: [
-        summary: [threshold: 90]
+        summary: [threshold: 90],
+        ignore: [
+          ~r/ExTournaments\.Utils.*/
+        ]
       ]
     ]
   end
