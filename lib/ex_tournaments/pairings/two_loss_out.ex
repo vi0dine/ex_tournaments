@@ -26,7 +26,8 @@ defmodule ExTournaments.Pairings.TwoLossOut do
           colors: false,
           bye_factor: 1.5,
           byes_by_seed: false,
-          up_down_factor: 1.2
+          up_down_factor: 1.2,
+          group_diff_factor: 8
         ]
       ) do
     players =
@@ -165,11 +166,13 @@ defmodule ExTournaments.Pairings.TwoLossOut do
 
       weight =
         Weight.calculate_weight(current, opponent, score_sum_index, score_group_index,
+          ordered: Keyword.get(opts, :ordered, false),
           rated: Keyword.get(opts, :rated, false),
           sorted_players: sorted_players,
           colors: Keyword.get(opts, :colors, false),
           bye_factor: Keyword.get(opts, :bye_factor, 1.5),
-          up_down_factor: Keyword.get(opts, :up_down_factor, 1.2)
+          up_down_factor: Keyword.get(opts, :up_down_factor, 1.2),
+          group_diff_factor: Keyword.get(opts, :group_diff_factor, 8)
         )
         |> Kernel./(100)
         |> Float.round(4)
