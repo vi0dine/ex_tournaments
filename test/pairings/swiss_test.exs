@@ -5,7 +5,7 @@ defmodule ExTournaments.Pairings.SwissTest do
   alias ExTournaments.Pairings.Swiss.Player
 
   describe "call/3" do
-    for num_of_participants <- 6..6 do
+    for num_of_participants <- 2..255 do
       test "should returns correct pairing for #{num_of_participants} participants" do
         fixture =
           File.read!("test/fixtures/pairings/swiss/swiss_#{unquote(num_of_participants)}.json")
@@ -30,11 +30,9 @@ defmodule ExTournaments.Pairings.SwissTest do
 
         players_count = unquote(num_of_participants)
 
-        IO.inspect("Test for #{players_count}")
-
         players =
           Enum.map(0..(players_count - 1), fn index ->
-            score = if rem(index + 1, 2) == 0, do: index * 25, else: index
+            score = if rem(index + 1, 2) == 0, do: index * 25 + 10, else: index * 20
 
             %Player{
               id: "player_#{index + 1}",

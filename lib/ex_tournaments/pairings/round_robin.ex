@@ -7,6 +7,11 @@ defmodule ExTournaments.Pairings.RoundRobin do
   alias ExTournaments.Match
   alias ExTournaments.Utils.PairingHelpers
 
+  @doc """
+  Takes list with players IDs, index of the first round, and flag indicating is players array is ordered.
+
+  Returns list of `%ExTournaments.Match{}` structs for the whole round robin format tournament.
+  """
   @spec call(list(integer()), integer(), boolean()) :: list(Match.t())
   def call(players, starting_round_index \\ 1, ordered \\ false) do
     players = PairingHelpers.prepare_players_list(players, ordered)
@@ -66,35 +71,39 @@ defmodule ExTournaments.Pairings.RoundRobin do
       current_round_match = Enum.at(round, match_index)
       previous_round_match = Enum.at(previous_round, match_index)
 
-      if match_index == 0 do
-        if previous_round_match.player2 == Enum.at(players, length(players) - 1) do
-          opponent_index = Enum.find_index(players, &(&1 == previous_round_match.player1))
-
-          %{
-            current_round_match
-            | player1: Enum.at(players, length(players) - 1),
-              player2: Enum.at(players, find_player_index(opponent_index, players))
-          }
-        else
-          opponent_index = Enum.find_index(players, &(&1 == previous_round_match.player2))
-
-          %{
-            current_round_match
-            | player2: Enum.at(players, length(players) - 1),
-              player1: Enum.at(players, find_player_index(opponent_index, players))
-          }
-        end
-      else
-        challenger_index = Enum.find_index(players, &(&1 == previous_round_match.player1))
-        opponent_index = Enum.find_index(players, &(&1 == previous_round_match.player2))
-
-        %{
-          current_round_match
-          | player1: Enum.at(players, find_player_index(challenger_index, players)),
-            player2: Enum.at(players, find_player_index(opponent_index, players))
-        }
-      end
+      assign_match_players(players, current_round_match, previous_round_match, match_index)
     end)
+  end
+
+  defp assign_match_players(players, current_round_match, previous_round_match, 0) do
+    if previous_round_match.player2 == Enum.at(players, length(players) - 1) do
+      opponent_index = Enum.find_index(players, &(&1 == previous_round_match.player1))
+
+      %{
+        current_round_match
+        | player1: Enum.at(players, length(players) - 1),
+          player2: Enum.at(players, find_player_index(opponent_index, players))
+      }
+    else
+      opponent_index = Enum.find_index(players, &(&1 == previous_round_match.player2))
+
+      %{
+        current_round_match
+        | player2: Enum.at(players, length(players) - 1),
+          player1: Enum.at(players, find_player_index(opponent_index, players))
+      }
+    end
+  end
+
+  defp assign_match_players(players, current_round_match, previous_round_match, _index) do
+    challenger_index = Enum.find_index(players, &(&1 == previous_round_match.player1))
+    opponent_index = Enum.find_index(players, &(&1 == previous_round_match.player2))
+
+    %{
+      current_round_match
+      | player1: Enum.at(players, find_player_index(challenger_index, players)),
+        player2: Enum.at(players, find_player_index(opponent_index, players))
+    }
   end
 
   defp find_player_index(index, players) do

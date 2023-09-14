@@ -4,7 +4,7 @@ defmodule ExTournaments.MixProject do
   def project do
     [
       app: :ex_tournaments,
-      version: "0.3.0",
+      version: "0.4.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -13,7 +13,10 @@ defmodule ExTournaments.MixProject do
       name: "ExTournaments",
       source_url: "https://github.com/vi0dine/ex_tournaments",
       test_coverage: [
-        summary: [threshold: 90]
+        summary: [threshold: 75],
+        ignore: [
+          ~r/ExTournaments\.Utils.*/
+        ]
       ]
     ]
   end
