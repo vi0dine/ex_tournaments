@@ -9,6 +9,7 @@ defmodule ExTournaments.Pairings.Swiss.Player do
     field(:index, non_neg_integer() | nil)
     field(:score, integer())
     field(:paired_up_down, boolean())
+    field(:rewarded_with_bye, boolean())
     field(:received_bye, boolean())
     field(:avoid, list(binary() | integer()) | nil)
     field(:colors, list(binary()) | nil)
