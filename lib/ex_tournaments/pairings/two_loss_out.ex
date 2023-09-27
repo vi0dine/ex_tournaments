@@ -30,6 +30,11 @@ defmodule ExTournaments.Pairings.TwoLossOut do
           group_diff_factor: 8
         ]
       ) do
+    {rewarded, players} =
+      if round == 1, do: Enum.split_with(players, & &1.rewarded_with_bye), else: {[], players}
+
+    Logger.info("Find #{length(rewarded)} rewarded players...")
+
     players =
       players
       |> assign_rating(opts)
@@ -73,9 +78,7 @@ defmodule ExTournaments.Pairings.TwoLossOut do
 
     Logger.debug("Overall matching weight is #{matching_weight}.")
 
-    bye_player = find_player_with_bye(players, matching)
-
-    generate_matches(round, players, matching, bye_player)
+    generate_matches(round, players, rewarded, matching)
   end
 
   # DEBUG
@@ -238,16 +241,19 @@ defmodule ExTournaments.Pairings.TwoLossOut do
 
   defp assign_bye(players, _score_pools, _opts), do: players
 
-  defp find_player_with_bye(players, pairs) do
+  defp find_players_with_bye(players, rewarded, pairs) do
     players_indices = Enum.map(players, & &1.index)
     paired_indices = Enum.map(pairs, &[&1.player_1, &1.player_2]) |> List.flatten()
 
-    (players_indices -- paired_indices)
-    |> List.first()
-    |> then(&Enum.find(players, fn player -> player.index == &1 end))
+    random_bye =
+      (players_indices -- paired_indices)
+      |> List.first()
+      |> then(&Enum.find(players, fn player -> player.index == &1 end))
+
+    [random_bye | rewarded]
   end
 
-  defp generate_matches(round, players, pairs, bye) do
+  defp generate_matches(round, players, rewarded, pairs) do
     regular =
       pairs
       |> Enum.with_index(1)
@@ -261,16 +267,17 @@ defmodule ExTournaments.Pairings.TwoLossOut do
       end)
 
     byes =
-      if is_nil(bye),
-        do: [],
-        else: [
-          %ExTournaments.Match{
-            round: round,
-            match: length(regular) + 1,
-            player1: bye,
-            player2: nil
-          }
-        ]
+      find_players_with_bye(players, rewarded, pairs)
+      |> Enum.reject(&is_nil(&1))
+      |> Enum.with_index(1)
+      |> Enum.map(fn {bye, index} ->
+        %ExTournaments.Match{
+          round: round,
+          match: length(regular) + index,
+          player1: bye,
+          player2: nil
+        }
+      end)
 
     regular ++ byes
   end
