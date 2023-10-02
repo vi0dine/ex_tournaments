@@ -5,8 +5,8 @@ defmodule ExTournaments.Pairings.TwoLossOut do
 
   require Logger
 
-  alias ExTournaments.Utils.EdmondsBlossom
-  alias ExTournaments.Utils.EdmondsBlossom.Vertex
+  alias ExTournaments.Utils.MaximumWeightedMatching
+  alias ExTournaments.Utils.MaximumWeightedMatching.Edge
 
   alias ExTournaments.Pairings.Swiss.Weight
   alias ExTournaments.Utils.PairingHelpers
@@ -72,7 +72,8 @@ defmodule ExTournaments.Pairings.TwoLossOut do
     matching =
       pairs
       |> format_for_matching()
-      |> EdmondsBlossom.call()
+      |> MaximumWeightedMatching.call()
+      |> Enum.uniq_by(&Enum.max([&1.player_1, &1.player_2]))
 
     matching_weight = calculate_weight(pairs, matching)
 
@@ -84,15 +85,28 @@ defmodule ExTournaments.Pairings.TwoLossOut do
   # DEBUG
   defp calculate_weight(pairs, matching) do
     Enum.reduce(matching, 0, fn %{player_1: player_1, player_2: player_2}, acc ->
-      {_, _, weight} =
-        Enum.find(pairs, fn {p1, p2, _wt} ->
-          p1 == player_1 and p2 == player_2
-        end)
+      weight = calculate_absolute_weight(pairs, player_1, player_2)
 
-      Logger.debug("Weight for #{player_1} and #{player_2} is #{weight}.")
+      if weight == 0 do
+        Logger.debug("Player #{player_1} got a BYE.")
+      else
+        Logger.debug("Weight for #{player_1} and #{player_2} is #{weight}.")
+      end
 
       acc + weight
     end)
+  end
+
+  defp calculate_absolute_weight(pairs, player_1, player_2) do
+    case Enum.find(pairs, fn {p1, p2, _wt} ->
+           (p1 == player_1 and p2 == player_2) or (p1 == player_2 and p2 == player_1)
+         end) do
+      {_, _, weight} ->
+        weight
+
+      nil ->
+        0
+    end
   end
 
   defp assign_rating(players, opts) do
@@ -177,8 +191,6 @@ defmodule ExTournaments.Pairings.TwoLossOut do
           up_down_factor: Keyword.get(opts, :up_down_factor, 1.2),
           group_diff_factor: Keyword.get(opts, :group_diff_factor, 8)
         )
-        |> Kernel./(100)
-        |> Float.round(4)
 
       {:cont, acc ++ [{current.index, opponent.index, weight}]}
     end
@@ -195,16 +207,11 @@ defmodule ExTournaments.Pairings.TwoLossOut do
 
   defp format_for_matching(pairs) do
     pairs
-    |> Enum.reduce([], fn {v1, v2, weight} = edge, acc ->
-      reversed_edge = {v2, v1, weight}
-      acc ++ [edge, reversed_edge]
-    end)
-    |> Enum.group_by(&elem(&1, 0))
-    |> Enum.map(fn {vertex, edges_data} ->
-      %Vertex{
-        index: vertex,
-        edges: Enum.map(edges_data, &elem(&1, 1)),
-        weights: Enum.map(edges_data, &elem(&1, 2))
+    |> Enum.map(fn {i, j, weight} ->
+      %Edge{
+        i: i,
+        j: j,
+        weight: trunc(weight * 1_000_000)
       }
     end)
   end
